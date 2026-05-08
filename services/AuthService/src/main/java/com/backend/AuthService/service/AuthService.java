@@ -54,7 +54,7 @@ public class AuthService {
         }
 
         String accessToken =
-                jwtUtil.generateAccessToken(user.getEmail());
+                jwtUtil.generateAccessToken(user.getId(),user.getEmail(), user.getRole());
 
         String refreshToken =
                 UUID.randomUUID().toString();
@@ -81,6 +81,14 @@ public class AuthService {
             throw new RuntimeException("Invalid refresh token");
         }
 
-        return jwtUtil.generateAccessToken(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        return jwtUtil.generateAccessToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole()
+        );
     }
 }

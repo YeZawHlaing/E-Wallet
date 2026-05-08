@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtUtil {
@@ -21,13 +22,44 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generateAccessToken(String email) {
+//    public String generateAccessToken(String email) {
+//
+//        return Jwts.builder()
+//                .setSubject(email)
+//                .setIssuedAt(new Date())
+//                .setExpiration(new Date(System.currentTimeMillis() + accessExpiration))
+//                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+//                .compact();
+//    }
+
+    public String generateAccessToken(
+            UUID userId,
+            String email,
+            String role
+    ) {
 
         return Jwts.builder()
-                .setSubject(email)
+
+                .setSubject(userId.toString())
+
+                .claim("email", email)
+
+                .claim("role", role)
+
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + accessExpiration))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+
+                .setExpiration(
+                        new Date(
+                                System.currentTimeMillis()
+                                        + accessExpiration
+                        )
+                )
+
+                .signWith(
+                        getSigningKey(),
+                        SignatureAlgorithm.HS256
+                )
+
                 .compact();
     }
 
