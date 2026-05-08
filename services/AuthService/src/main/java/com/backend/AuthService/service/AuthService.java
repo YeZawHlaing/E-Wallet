@@ -5,6 +5,7 @@ import com.backend.AuthService.dto.request.RegisterRequest;
 import com.backend.AuthService.entity.User;
 import com.backend.AuthService.repository.UserRepository;
 import com.backend.AuthService.security.JwtUtil;
+import com.backend.AuthService.security.OtpUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final EmailService emailService;
+    private final OtpUtil otpUtil;
 
     public String register(RegisterRequest request) {
 
@@ -90,5 +93,47 @@ public class AuthService {
                 user.getEmail(),
                 user.getRole()
         );
+    }
+
+    public String sendOtp(String email) {
+
+        String otp =
+                otpUtil.generateOtp();
+
+        // Save OTP in Redis for 5 minutes
+        redisTemplate.opsForValue().set(
+                "otp:" + email,
+                otp,
+                5,
+                TimeUnit.MINUTES
+        );
+
+        // Send email
+        emailService.sendOtpEmail(email, otp);
+
+        return "OTP sent successfully";
+    }
+
+    public String verifyOtp(
+            String email,
+            String otp
+    ) {
+
+        String storedOtp =
+                (String) redisTemplate
+                        .opsForValue()
+                        .get("otp:" + email);
+
+        if (
+                storedOtp == null ||
+                        !storedOtp.equals(otp)
+        ) {
+            throw new RuntimeException("Invalid OTP");
+        }
+
+        // delete after success
+        redisTemplate.delete("otp:" + email);
+
+        return "OTP verified";
     }
 }
